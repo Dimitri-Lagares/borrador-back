@@ -9,9 +9,6 @@ const PUERTO = process.env.PORT || 3055;
 
 const app = express();
 
-// let cors = require("cors");
-// app.use(cors());
-
 app.use(bodyParser.json());
 
 app.use((req, res, next) => {
@@ -38,6 +35,19 @@ app.get('/', (request, response) => {
     response.send('App Running')
 });
 
+app.get('/formulario', (req, res) => {
+    const sql = 'SELECT * FROM login';
+
+    connection.query(sql, (error, results) => {
+        if(error) throw error;
+        if(results.length > 0){
+            res.json(results);
+        }else{
+            res.send('Not result');
+        }
+    });
+});
+
 app.post('/inicio-sesion', (request, response) => {
 
     const {user, password} = request.body
@@ -48,8 +58,6 @@ app.post('/inicio-sesion', (request, response) => {
         } else {
             if (result.length > 0) {
                 response.status(200).send({
-                    // user: result[0].user,
-                    // password: result[0].password
                 })
     
             } else {
@@ -58,5 +66,12 @@ app.post('/inicio-sesion', (request, response) => {
         }
     })
 })
+
+app.post('/enviar-formulario', (request, response) => {
+    connection.query('INSERT INTO formulario SET ?', request.body, (error, result) => {
+        if (error) throw error;
+        response.send('Informacion registrada exitosamente');
+    });
+});
 
 app.listen(PUERTO, ()=> console.log(`Servidor corriendo en el puerto '${PUERTO}'`));
