@@ -23,7 +23,7 @@ const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'root',
-    database: 'login',
+    database: 'db',
 })
 
 connection.connect(error => {
@@ -36,7 +36,7 @@ app.get('/', (request, response) => {
 });
 
 app.get('/formulario', (req, res) => {
-    const sql = 'SELECT * FROM login';
+    const sql = 'SELECT * FROM formulario';
 
     connection.query(sql, (error, results) => {
         if(error) throw error;
@@ -73,5 +73,24 @@ app.post('/enviar-formulario', (request, response) => {
         response.send('Informacion registrada exitosamente');
     });
 });
+
+app.put('/actualizar/:id', (request, response) => {
+    const id = request.params.id;
+    connection.query('UPDATE formulario SET ? WHERE id = ?', [request.body, id], (error, result) => {
+        if (error) throw error;
+        response.send('Actualizado exitosamente');
+    });
+});
+
+app.delete('/eliminar-formulario/:idFormulario', async(req, res) => {
+    const id = req.params
+    const sql = `DELETE FROM usuarios where idformulario = ${id.idFormulario}`
+
+    await pool.query(sql, error => {
+      if (error) throw error
+
+      res.send('Eliminado correctamente')
+    })
+})
 
 app.listen(PUERTO, ()=> console.log(`Servidor corriendo en el puerto '${PUERTO}'`));
