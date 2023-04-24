@@ -1,13 +1,14 @@
 const express = require('express');
 const mysql = require('mysql');
-
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken')
+const app = express();
+
 const { request } = require('http');
 const { error } = require('console');
 
 const PUERTO = process.env.PORT || 3055;
 
-const app = express();
 
 app.use(bodyParser.json());
 
@@ -76,17 +77,17 @@ app.post('/enviar-formulario', (request, response) => {
 
 app.put('/actualizar/:id', (request, response) => {
     const id = request.params.id;
-    connection.query('UPDATE formulario SET ? WHERE id = ?', [request.body, id], (error, result) => {
+    connection.query('UPDATE formulario SET ? WHERE idformulario = ?', [request.body, id], (error, result) => {
         if (error) throw error;
         response.send('Actualizado exitosamente');
     });
 });
 
-app.delete('/eliminar-formulario/:idFormulario', async(req, res) => {
+app.delete('/eliminar-fila/:idformulario', async(req, res) => {
     const id = req.params
-    const sql = `DELETE FROM usuarios where idformulario = ${id.idFormulario}`
+    const sql = `DELETE FROM formulario WHERE idformulario = ${id.idformulario}`
 
-    await pool.query(sql, error => {
+    await connection.query(sql, error => {
       if (error) throw error
 
       res.send('Eliminado correctamente')
@@ -94,3 +95,61 @@ app.delete('/eliminar-formulario/:idFormulario', async(req, res) => {
 })
 
 app.listen(PUERTO, ()=> console.log(`Servidor corriendo en el puerto '${PUERTO}'`));
+
+app.get('/jwt', (req, res) =>{
+    res.json({
+        text : 'Api corriendo correctamente'
+    })
+} )
+
+app.post(('/jwt/login'), (req,res) => {
+    const user = {id:1}
+    const token = jwt.sign({user}, 'my_secret_key')
+    res.json(token)
+})
+
+//const Token = (req, res, next) => {
+//    const header = req.headers['authorization']
+//    console.log(header);
+//    if (typeof header != 'undefined'){
+//        const portador = header.split(" ")
+//        console.log(portador);
+//        next()    
+//    }  
+    // const token = req.headers['x-access-token'] || req.headers['authorization']
+    // if (token) {
+    //     jwt.verify(token,'my_secret_key', (err, data) => {
+    //         if (err) {
+    //             res.status(401).send('No autorizado')
+    //         } else {
+    //             req.token = token
+    //             next()
+    //         }
+    //     })
+    // } else {
+    //     res.status(403).send('No autorizado')
+    // }
+//}
+
+const correctToken = (req,res,next)=> {
+    const header = req.headers['authorization']
+    if(typeof header !== 'undefined'){
+        const portador = header.split(" ")
+        const portadorToken = portador[1]
+        req.token = portadorToken
+        next()
+    } else {
+        res.sendStatus(403)
+    }
+}
+
+ app.get('/jwt/protected', correctToken,(req,res) => {
+
+    jwt.verify(req.token,'my_secret_key', (err, data) => {
+        if (err) {
+            res.status(401).send('No autorizado')
+        } else {
+            res.json(data);
+        }
+    })
+})
